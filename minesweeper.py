@@ -250,6 +250,9 @@ def gridToNums(inputGrid):
 def getCell(inGrid):
     return (0,0)
 
+def returnResult():
+    pass
+
 
 if __name__ == "__main__":
     playgame(False)
