@@ -4,7 +4,7 @@ import re
 import time
 from string import ascii_lowercase
 import copy 
-
+import torch
 
 def setupgrid(gridsize, start, numberofmines):
     emptygrid = [['0' for i in range(gridsize)] for i in range(gridsize)]
@@ -139,7 +139,7 @@ def parseinput(inputstring, gridsize, helpmessage):
     return {'cell': cell, 'flag': flag, 'message': message}
 
 
-def playgame(user_input= True):
+def playgame(user_input= True, model=None):
     gridsize = 9
     numberofmines = 10
 
@@ -167,7 +167,9 @@ def playgame(user_input= True):
             cell = result['cell']
         else:
             message = ""
-            cell = getCell(gridToNums(currgrid))
+
+            # Pass the grid to the model and get its output.
+            cell, outGrid = getCell(model, gridToNums(currgrid))
             result = dict()
             result['flag'] = False     
         
@@ -201,16 +203,19 @@ def playgame(user_input= True):
 
             elif grid[rowno][colno] == 'X':
                 print('Game Over\n')
+                sendResult(model, outGrid, cell, False)
                 showgrid(grid)
                 if playagain():
-                    playgame()
+                    playgame(user_input, model)
                 return
 
             elif currcell == ' ':
                 showcells(grid, currgrid, rowno, colno)
+                sendResult(model, outGrid, cell, True)
 
             else:
                 message = "That cell is already shown"
+                sendResult(model, outGrid, cell, False)
 
             # Set up second win condition.
             spacesLeft = 0
@@ -246,13 +251,23 @@ def gridToNums(inputGrid):
                 outGrid[row][col] = -1
             else:
                 outGrid[row][col] = int(val)
+    return outGrid
 
-def getCell(inGrid):
-    return (0,0)
+def getCell(model, inGrid):
+    model.forward(inGrid)
+    return (model.getCell(), model.getGrid())
 
-def returnResult():
-    pass
+def sendResult(model, inGrid, cell, resultBool):
+    
+    outGrid = inGrid[0].clone().squeeze(0)
+    if resultBool == True:
+        #outGrid = [[min(i, 9) for i in row] for row in inGrid]
+        outGrid[cell[0],cell[1]] = 1
 
+    else: #resultBool = False
+        outGrid[cell[0],cell[1]] = 0
+
+    model.sendResult(torch.clamp(outGrid,0,1))
 
 if __name__ == "__main__":
-    playgame(False)
+    playgame(True)
