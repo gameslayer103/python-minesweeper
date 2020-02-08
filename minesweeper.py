@@ -3,6 +3,7 @@ import random
 import re
 import time
 from string import ascii_lowercase
+import copy 
 
 
 def setupgrid(gridsize, start, numberofmines):
@@ -138,7 +139,7 @@ def parseinput(inputstring, gridsize, helpmessage):
     return {'cell': cell, 'flag': flag, 'message': message}
 
 
-def playgame():
+def playgame(user_input= True):
     gridsize = 9
     numberofmines = 10
 
@@ -156,11 +157,20 @@ def playgame():
 
     while True:
         minesleft = numberofmines - len(flags)
-        prompt = input('Enter the cell ({} mines left): '.format(minesleft))
-        result = parseinput(prompt, gridsize, helpmessage + '\n')
 
-        message = result['message']
-        cell = result['cell']
+        # Get the input.
+        if user_input == True:
+            prompt = input('Enter the cell ({} mines left): '.format(minesleft))
+            result = parseinput(prompt, gridsize, helpmessage + '\n')
+
+            message = result['message']
+            cell = result['cell']
+        else:
+            message = ""
+            cell = getCell(gridToNums(currgrid))
+            result = dict()
+            result['flag'] = False     
+        
 
         if cell:
             print('\n\n')
@@ -226,4 +236,20 @@ def playgame():
         showgrid(currgrid)
         print(message)
 
-playgame()
+
+def gridToNums(inputGrid):
+    outGrid = copy.deepcopy(inputGrid)
+    for row in range(len(inputGrid)):
+        for col in range(len(inputGrid[0])):
+            val = outGrid[row][col]
+            if val == " ":
+                outGrid[row][col] = -1
+            else:
+                outGrid[row][col] = int(val)
+
+def getCell(inGrid):
+    return (0,0)
+
+
+if __name__ == "__main__":
+    playgame(False)
